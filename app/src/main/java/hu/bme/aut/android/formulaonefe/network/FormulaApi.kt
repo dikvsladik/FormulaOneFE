@@ -1,6 +1,8 @@
 package hu.bme.aut.android.formulaonefe.network
 
 import hu.bme.aut.android.formulaonefe.data.raceschedule.RaceSchedule
+import hu.bme.aut.android.formulaonefe.data.result.MRData
+import hu.bme.aut.android.formulaonefe.data.result.RaceTable
 import hu.bme.aut.android.formulaonefe.data.standings.DriverStandings
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
@@ -27,6 +29,22 @@ class FormulaRepository(private val api: GetFormulaDriverStandingsApi) {
     }
     suspend fun getSchedule(year: String): RaceSchedule? {
         val response = api.getSchedule(year)
+        return if (response.isSuccessful) {
+            response.body()
+        } else {
+            null
+        }
+    }
+    suspend fun getResult(year: String,race:String): hu.bme.aut.android.formulaonefe.data.result.Result? {
+        val response = api.getResult(year,race)
+        return if (response.isSuccessful) {
+            response.body()
+        } else {
+            null
+        }
+    }
+    suspend fun getLatest(): hu.bme.aut.android.formulaonefe.data.result.Result? {
+        val response = api.getLatest()
         return if (response.isSuccessful) {
             response.body()
         } else {

@@ -20,12 +20,41 @@ import androidx.compose.ui.unit.dp
 import java.util.Calendar
 
 @Composable
-fun YearPickerScreen(onYearSelected: (Int) -> Unit) {
+fun YearPickerScreen1950(onYearSelected: (Int) -> Unit) {
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         val startYear = 1950
+        val endYear = Calendar.getInstance().get(Calendar.YEAR)
+        val years = (endYear downTo startYear).toList()
+
+        items(years.chunked(3)) { yearPair ->
+            Row(
+                modifier = Modifier.padding(vertical = 4.dp),
+                horizontalArrangement = Arrangement.SpaceEvenly
+            ) {
+                yearPair.forEach { year ->
+                    Button(
+                        onClick = { onYearSelected(year) },
+                        modifier = Modifier.padding(horizontal = 8.dp),
+                        colors = ButtonDefaults.buttonColors(backgroundColor = Color(0xFFDC0000))
+                    ) {
+                        Text(text = year.toString())
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun YearPickerScreen2005(onYearSelected: (Int) -> Unit) {
+    LazyColumn(
+        modifier = Modifier.fillMaxSize(),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        val startYear = 2005
         val endYear = Calendar.getInstance().get(Calendar.YEAR)
         val years = (endYear downTo startYear).toList()
 

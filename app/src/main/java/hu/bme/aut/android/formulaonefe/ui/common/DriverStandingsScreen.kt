@@ -44,7 +44,7 @@ import com.skydoves.landscapist.placeholder.shimmer.ShimmerPlugin
 import hu.bme.aut.android.formulaonefe.R
 import hu.bme.aut.android.formulaonefe.network.ApiClient
 import hu.bme.aut.android.formulaonefe.network.FormulaRepository
-import hu.bme.aut.android.formulaonefe.ui.tools.YearPickerScreen
+import hu.bme.aut.android.formulaonefe.ui.tools.YearPickerScreen1950
 import kotlinx.coroutines.launch
 import java.util.*
 
@@ -57,12 +57,13 @@ fun DriverStandingsScreen(standingsLists: List<StandingsLists>,
     val repository = FormulaRepository(ApiClient.api)
     val updatedStandingsLists = remember { mutableStateOf(standingsLists) }
     val yearPicked = remember { mutableStateOf(2023)}
+
     Box(
         modifier = Modifier.fillMaxSize(),
         contentAlignment = Alignment.Center
     ) {
         if (showYearPicker.value) {
-            YearPickerScreen { selectedYear ->
+            YearPickerScreen1950 { selectedYear ->
                 lifecycleScope.launch {
                     val newStandingsLists = repository.getFormula(selectedYear.toString())!!.MRData.StandingsTable.StandingsLists
                     yearPicked.value=selectedYear
@@ -103,7 +104,6 @@ fun DriverList(drivers: List<DriverStanding>, yearPicked: Int) {
 @OptIn(InternalLandscapistApi::class)
 @Composable
 fun DriverRow(driverStanding: DriverStanding, yearPicked: Int) {
-
     val givenName = driverStanding.Driver.givenName
     val familyName = driverStanding.Driver.familyName
     val initials = givenName.take(3) + familyName.take(3)
@@ -172,7 +172,7 @@ fun DriverRow(driverStanding: DriverStanding, yearPicked: Int) {
             Spacer(modifier = Modifier.height(20.dp))
             Text(
                 text = "${driverStanding.Driver.givenName} ${driverStanding.Driver.familyName}",
-                fontSize = 32.sp,
+                fontSize = 30.sp,
                 fontWeight = FontWeight.Bold,
                 fontFamily = MyCustomFont
             )
@@ -236,6 +236,35 @@ fun DriverRow(driverStanding: DriverStanding, yearPicked: Int) {
                 fontWeight = FontWeight.Bold,
                 fontFamily = MyCustomFont
             )
+            if (driverStanding.wins != "0") {
+                Spacer(modifier = Modifier.height(20.dp))
+                Row(
+                    horizontalArrangement = Arrangement.Center,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = "Won ",
+                        fontSize = 19 .sp,
+                        fontWeight = FontWeight.Bold,
+                        fontFamily = MyCustomFont
+                    )
+                    Text(
+                        text = driverStanding.wins,
+                        fontSize = 22.sp, // A wins mérete
+                        color = Color.Red, // A wins színe
+                        fontWeight = FontWeight.Bold,
+                        fontFamily = MyCustomFont
+                    )
+                    val raceText = if (driverStanding.wins.toInt() == 1) " race" else " races"
+                    Text(
+                        text = "$raceText in the season",
+                        fontSize = 19.sp,
+                        fontWeight = FontWeight.Bold,
+                        fontFamily = MyCustomFont
+                    )
+                }
+
+            }
         }
     }
 }

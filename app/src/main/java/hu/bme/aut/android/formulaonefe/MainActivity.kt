@@ -12,6 +12,7 @@ import androidx.annotation.RequiresApi
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.graphics.Color
@@ -23,6 +24,8 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import hu.bme.aut.android.formulaonefe.data.raceschedule.RaceTable
+import hu.bme.aut.android.formulaonefe.data.result.Result
+import hu.bme.aut.android.formulaonefe.data.result.ResultList
 import hu.bme.aut.android.formulaonefe.data.standings.DriverStandings
 import hu.bme.aut.android.formulaonefe.data.standings.MRData
 import hu.bme.aut.android.formulaonefe.data.standings.StandingsLists
@@ -47,12 +50,27 @@ class MainActivity : ComponentActivity() {
         setContent {
             val standingsLists = remember { mutableStateOf(emptyList<StandingsLists>()) }
             val scheduleLists = remember { mutableStateOf<RaceTable?>(null) }
+            val resultLists = remember { mutableStateListOf<hu.bme.aut.android.formulaonefe.data.result.Result>() }
+            val latestResultRound= remember{ mutableStateOf("0")}
             lifecycleScope.launch {
                 standingsLists.value = repository.getFormula(LocalDate.now().year.toString())!!.MRData.StandingsTable.StandingsLists
             }
             lifecycleScope.launch {
                 scheduleLists.value = repository.getSchedule(LocalDate.now().year.toString())!!.MRData.RaceTable
             }
+            lifecycleScope.launch {
+                latestResultRound.value = repository.getLatest()!!.MRData.RaceTable.round
+            }
+            var latestResultRoundInt = latestResultRound.value.toIntOrNull() ?: 0
+            lifecycleScope.launch {
+                for (race in 1..latestResultRoundInt) {
+                    val result = repository.getResult(year = LocalDate.now().year.toString(), race = race.toString())
+                    result?.MRData?.let { resultList ->
+                        resultLists.add(Result(resultList))
+                    }
+                }
+            }
+
 
             MaterialTheme {
                 Surface(color = Color(51,51,51)) {
@@ -62,7 +80,7 @@ class MainActivity : ComponentActivity() {
                         composable(Screen.DriverStandings.route) { DriverStandingsScreen(standingsLists.value,lifecycleScope) }
                         composable(Screen.RaceSchedule.route) { scheduleLists.value?.let { it1 ->
                             RaceScheduleScreen(
-                                it1
+                                it1, lifecycleScope
                             )
                         } }
                         composable(Screen.RaceResult.route) { RaceResultScreen() }
