@@ -83,7 +83,7 @@ class MainActivity : ComponentActivity() {
                                 it1, lifecycleScope
                             )
                         } }
-                        composable(Screen.RaceResult.route) { RaceResultScreen() }
+                        composable(Screen.RaceResult.route) { RaceResultScreen(resultLists, lifecycleScope) }
                         composable(Screen.DriverInformation.route) { DriverInformationScreen() }
                         composable(Screen.WorldChampions.route) { WorldChampionsScreen() }
                     }
