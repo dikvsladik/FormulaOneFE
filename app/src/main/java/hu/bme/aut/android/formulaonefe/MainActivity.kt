@@ -18,9 +18,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material.Text
-import androidx.compose.runtime.mutableStateListOf
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -58,11 +56,13 @@ class MainActivity : ComponentActivity() {
         getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
     }
     val myCustomFont = FontFamily(Font(R.font.formula1_bold_web_0))
+
     @RequiresApi(Build.VERSION_CODES.O)
     @SuppressLint("CoroutineCreationDuringComposition")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         createNotificationChannel()
+
         val repository = FormulaRepository(ApiClient.api)
 
         setContent {
@@ -70,108 +70,143 @@ class MainActivity : ComponentActivity() {
             val standingsLists = remember { mutableStateOf(emptyList<StandingsLists>()) }
             val scheduleLists = remember { mutableStateOf<RaceTable?>(null) }
             val resultLists = remember { mutableStateListOf<hu.bme.aut.android.formulaonefe.data.result.Result>() }
-            val latestResultRound= remember{ mutableStateOf("0")}
-            val driversList = remember { mutableStateOf<DriverInformation?>(null)}
-            val championsList = remember { mutableStateOf<Champions?>(null)}
-            lifecycleScope.launch {
-                try {
-                    standingsLists.value = repository.getFormula(LocalDate.now().year.toString())!!.MRData.StandingsTable.StandingsLists
-                } catch (e: Exception) {
-                    apiAvailable.value = false
-                }
-            }
-            lifecycleScope.launch {
-                try {
-                    scheduleLists.value = repository.getSchedule(LocalDate.now().year.toString())!!.MRData.RaceTable
-                } catch (e: Exception) {
-                    apiAvailable.value = false
-                }
-            }
-            lifecycleScope.launch {
-                try {
-                    latestResultRound.value = repository.getLatest()!!.MRData.RaceTable.round
-                } catch (e: Exception) {
-                    apiAvailable.value = false
-                }
-            }
-            var latestResultRoundInt = latestResultRound.value.toIntOrNull() ?: 0
-            lifecycleScope.launch {
-                for (race in 1..latestResultRoundInt) {
-                    try {
-                        val result = repository.getResult(year = LocalDate.now().year.toString(), race = race.toString())
-                        result?.MRData?.let { resultList ->
-                            resultLists.add(Result(resultList))
-                        }
-                    } catch (e: Exception) {
-                        apiAvailable.value = false
-                    }
-                }
-            }
-            lifecycleScope.launch {
-                try {
-                    driversList.value = repository.getDrivers(LocalDate.now().year.toString())
-                } catch (e: Exception) {
-                    apiAvailable.value = false
-                }
-            }
-            lifecycleScope.launch {
-                try {
-                    championsList.value = repository.getChampions()
-                } catch (e: Exception) {
-                    apiAvailable.value = false
-                }
-            }
+            val latestResultRound = remember { mutableStateOf("0") }
+            val driversList = remember { mutableStateOf<DriverInformation?>(null) }
+            val championsList = remember { mutableStateOf<Champions?>(null) }
+
+            fetchData(repository, apiAvailable, standingsLists, scheduleLists, latestResultRound, resultLists, driversList, championsList)
 
             MaterialTheme {
-                Surface(color = Color(51,51,51)) {
+                Surface(color = Color(51, 51, 51)) {
                     if (apiAvailable.value) {
-                        val navController = rememberNavController()
-                        NavHost(navController, startDestination = Screen.Home.route) {
-                            composable(Screen.Home.route) { HomeScreen(navController) }
-                            composable(Screen.DriverStandings.route) { DriverStandingsScreen(standingsLists.value,lifecycleScope) }
-                            composable(Screen.RaceSchedule.route) { scheduleLists.value?.let { it1 ->
-                                RaceScheduleScreen(
-                                    it1, lifecycleScope
-                                )
-                            } }
-                            composable(Screen.RaceResult.route) { RaceResultScreen(resultLists, lifecycleScope) }
-                            composable(Screen.DriverInformation.route) {
-                                DriverInformationScreen(driversList.value,lifecycleScope) { driver ->
-                                    navController.navigate("driverDetails/${driver.driverId}")
-                                }
-                            }
-                            composable("driverDetails/{driverId}") { backStackEntry ->
-                                val driverId = backStackEntry.arguments?.getString("driverId")
-                                val driver = driversList.value?.MRData?.DriverTable?.Drivers?.find { it.driverId == driverId }
-                                if (driver != null) {
-                                    DriverDetailsScreen(driver = driver) {
-                                        // Handle Wikipedia button click here
-                                    }
-                                }
-                            }
-                            composable(Screen.WorldChampions.route) { WorldChampionsScreen(championsList.value) }
-
-                            composable("settings") { SettingsScreen(showNotification = { requestNotificationAccess() }) }
-                        }
-                    }else{
-                        Box(
-                            modifier = Modifier.fillMaxSize(),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Text(
-                                text = "The database is currently unavailable, please try again later.",
-                                color = Color.White,
-                                fontSize = 18.sp,modifier = Modifier.padding(8.dp),
-                                textAlign = TextAlign.Center, fontFamily = myCustomFont
-                            )
-                        }
+                        setupNavigation(standingsLists, scheduleLists, resultLists, driversList, championsList)
+                    } else {
+                        showApiUnavailableMessage()
                     }
                 }
             }
         }
     }
 
+    @RequiresApi(Build.VERSION_CODES.O)
+    private fun fetchData(
+        repository: FormulaRepository,
+        apiAvailable: MutableState<Boolean>,
+        standingsLists: MutableState<List<StandingsLists>>,
+        scheduleLists: MutableState<RaceTable?>,
+        latestResultRound: MutableState<String>,
+        resultLists: MutableList<hu.bme.aut.android.formulaonefe.data.result.Result>,
+        driversList: MutableState<DriverInformation?>,
+        championsList: MutableState<Champions?>
+    ) {
+        lifecycleScope.launch {
+            try {
+                standingsLists.value = repository.getFormula(LocalDate.now().year.toString())!!.MRData.StandingsTable.StandingsLists
+            } catch (e: Exception) {
+                apiAvailable.value = false
+            }
+        }
+        lifecycleScope.launch {
+            try {
+                scheduleLists.value = repository.getSchedule(LocalDate.now().year.toString())!!.MRData.RaceTable
+            } catch (e: Exception) {
+                apiAvailable.value = false
+            }
+        }
+        lifecycleScope.launch {
+            try {
+                latestResultRound.value = repository.getLatest()!!.MRData.RaceTable.round
+            } catch (e: Exception) {
+                apiAvailable.value = false
+            }
+        }
+        var latestResultRoundInt = latestResultRound.value.toIntOrNull() ?: 0
+        lifecycleScope.launch {
+            for (race in 1..latestResultRoundInt) {
+                try {
+                    val result = repository.getResult(year = LocalDate.now().year.toString(), race = race.toString())
+                    result?.MRData?.let { resultList ->
+                        resultLists.add(Result(resultList))
+                    }
+                } catch (e: Exception) {
+                    apiAvailable.value = false
+                }
+            }
+        }
+        lifecycleScope.launch {
+            try {
+                driversList.value = repository.getDrivers(LocalDate.now().year.toString())
+            } catch (e: Exception) {
+                apiAvailable.value = false
+            }
+        }
+        lifecycleScope.launch {
+            try {
+                championsList.value = repository.getChampions()
+            } catch (e: Exception) {
+                apiAvailable.value = false
+            }
+        }
+    }
+    @RequiresApi(Build.VERSION_CODES.O)
+    @Composable
+    private fun setupNavigation(
+        standingsLists: MutableState<List<StandingsLists>>,
+        scheduleLists: MutableState<RaceTable?>,
+        resultLists: MutableList<hu.bme.aut.android.formulaonefe.data.result.Result>,
+        driversList: MutableState<DriverInformation?>,
+        championsList: MutableState<Champions?>
+
+
+    ) {
+
+        val navController = rememberNavController()
+        NavHost(navController, startDestination = Screen.Home.route) {
+            composable(Screen.Home.route) { HomeScreen(navController) }
+            composable(Screen.DriverStandings.route) { DriverStandingsScreen() }
+            composable(Screen.RaceSchedule.route) { scheduleLists.value?.let { it1 ->
+                RaceScheduleScreen(
+                    it1, lifecycleScope
+                )
+            } }
+            composable(Screen.RaceResult.route) { RaceResultScreen(resultLists,lifecycleScope) }
+            composable(Screen.DriverInformation.route) {
+                DriverInformationScreen(driversList.value,lifecycleScope) { driver ->
+                    navController.navigate("driverDetails/${driver.driverId}")
+                }
+            }
+            composable("driverDetails/{driverId}") { backStackEntry ->
+                val driverId = backStackEntry.arguments?.getString("driverId")
+                val driver = driversList.value?.MRData?.DriverTable?.Drivers?.find { it.driverId == driverId }
+                if (driver != null) {
+                    DriverDetailsScreen(driver = driver) {
+                        // Handle Wikipedia button click here
+                    }
+                }
+            }
+
+            composable(Screen.WorldChampions.route) { WorldChampionsScreen(championsList.value,lifecycleScope) }
+
+            composable("settings") { SettingsScreen(showNotification = { requestNotificationAccess() }) }
+        }
+    }
+    @Composable
+    private fun showApiUnavailableMessage() {
+        Box(
+            modifier = Modifier.fillMaxSize(),
+            contentAlignment = Alignment.Center
+        ) {
+            Text(
+                text = "The database is currently unavailable, please try again later.",
+                color = Color.White,
+                fontSize = 18.sp, modifier = Modifier.padding(8.dp),
+                textAlign = TextAlign.Center, fontFamily = myCustomFont
+            )
+        }
+    }
+
     private val notificationChannelId = "Race_Start_Notification_Channel"
+
     private fun createNotificationChannel() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             val name = getString(R.string.notification_channel_name)
@@ -186,6 +221,7 @@ class MainActivity : ComponentActivity() {
             notificationManager.createNotificationChannel(channel)
         }
     }
+
     private fun requestNotificationAccess() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
             if (!notificationManager.isNotificationPolicyAccessGranted) {
@@ -204,7 +240,6 @@ class MainActivity : ComponentActivity() {
         notificationHelper.showNotification()
     }
 
-
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
         if (requestCode == notificationAccessRequestCode) {
@@ -217,6 +252,5 @@ class MainActivity : ComponentActivity() {
             }
         }
     }
-
-
 }
+

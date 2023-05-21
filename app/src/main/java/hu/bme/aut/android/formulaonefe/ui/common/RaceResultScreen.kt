@@ -57,6 +57,7 @@ import hu.bme.aut.android.formulaonefe.data.result.ResultX
 import hu.bme.aut.android.formulaonefe.network.ApiClient
 import hu.bme.aut.android.formulaonefe.network.FormulaRepository
 import hu.bme.aut.android.formulaonefe.ui.tools.YearPickerScreen1950
+import hu.bme.aut.android.formulaonefe.ui.viewmodels.RaceResultViewModel
 import kotlinx.coroutines.launch
 import java.time.LocalDate
 
@@ -66,7 +67,6 @@ val myCustomFont = FontFamily(Font(R.font.formula1_bold_web_0))
 @OptIn(ExperimentalPagerApi::class)
 @Composable
 fun RaceResultScreen(initialResultLists: List<Result>,lifecycleScope: LifecycleCoroutineScope) {
-
 
     val showYearPicker = remember { mutableStateOf(false) }
     val repository = FormulaRepository(ApiClient.api)

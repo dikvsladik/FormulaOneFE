@@ -10,7 +10,7 @@ import androidx.compose.material.Surface
 import androidx.compose.material.Text
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.DateRange
-import androidx.compose.runtime.Composable
+
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
@@ -49,36 +49,36 @@ import kotlinx.coroutines.launch
 import java.util.*
 
 
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.lifecycle.viewmodel.compose.viewModel
+import hu.bme.aut.android.formulaonefe.ui.viewmodels.DriverStandingsViewModel
+
 @Composable
-fun DriverStandingsScreen(standingsLists: List<StandingsLists>,
-                          lifecycleScope: LifecycleCoroutineScope
-) {
-    val showYearPicker = remember { mutableStateOf(false) }
-    val repository = FormulaRepository(ApiClient.api)
-    val updatedStandingsLists = remember { mutableStateOf(standingsLists) }
-    val yearPicked = remember { mutableStateOf(2023)}
+fun DriverStandingsScreen() {
+    val viewModel: DriverStandingsViewModel = viewModel()
+    val showYearPicker by viewModel.showYearPicker
+    val updatedStandingsLists by viewModel.updatedStandingsLists
+    val yearPicked by viewModel.yearPicked
 
     Box(
         modifier = Modifier.fillMaxSize(),
         contentAlignment = Alignment.Center
     ) {
-        if (showYearPicker.value) {
+        if (showYearPicker) {
             YearPickerScreen1950 { selectedYear ->
-                lifecycleScope.launch {
-                    val newStandingsLists = repository.getFormula(selectedYear.toString())!!.MRData.StandingsTable.StandingsLists
-                    yearPicked.value=selectedYear
-                    updatedStandingsLists.value = newStandingsLists
-                }
-                showYearPicker.value = false
+                viewModel.fetchDriverStandings(selectedYear)
+                viewModel.toggleYearPicker()
             }
         } else {
-            updatedStandingsLists.value.forEach { standingsList ->
-                DriverList(standingsList.DriverStandings,yearPicked.value)
+            updatedStandingsLists.forEach { standingsList ->
+                DriverList(standingsList.DriverStandings, yearPicked)
             }
         }
 
         FloatingActionButton(
-            onClick = { showYearPicker.value = !showYearPicker.value },
+            onClick = { viewModel.toggleYearPicker() },
             modifier = Modifier
                 .align(Alignment.BottomEnd)
                 .padding(16.dp),
@@ -88,6 +88,7 @@ fun DriverStandingsScreen(standingsLists: List<StandingsLists>,
         }
     }
 }
+
 
 
 

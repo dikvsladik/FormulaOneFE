@@ -53,6 +53,7 @@ import hu.bme.aut.android.formulaonefe.network.ApiClient
 import hu.bme.aut.android.formulaonefe.network.FormulaRepository
 import hu.bme.aut.android.formulaonefe.notification.scheduleNotification
 import hu.bme.aut.android.formulaonefe.ui.tools.YearPickerScreen2005
+import hu.bme.aut.android.formulaonefe.ui.viewmodels.RaceScheduleViewModel
 import kotlinx.coroutines.launch
 import java.time.LocalDate
 import java.time.ZoneId
@@ -309,15 +310,15 @@ fun RaceItem(race: Race, yearPicked: Int) {
                                 dateTimeFormatter.format(firstPracticeLocalDateTime)
                             Text(text = formattedFirstPracticeDateTime.substring(5, 10), fontSize = 14.sp, fontFamily = myCustomFont)
                         }
-                       race.SecondPractice?.let {
-                           val secondPracticeLocalDateTime =
-                               OffsetDateTime.parse("${race.SecondPractice.date}T${race.SecondPractice.time}")
-                                   .atZoneSameInstant(ZoneId.systemDefault())
-                                   .toLocalDateTime()
-                           val formattedSecondPracticeDateTime =
-                               dateTimeFormatter.format(secondPracticeLocalDateTime)
-                           Text(text = formattedSecondPracticeDateTime.substring(5, 10), fontSize = 14.sp, fontFamily = myCustomFont)
-                       }
+                        race.SecondPractice?.let {
+                            val secondPracticeLocalDateTime =
+                                OffsetDateTime.parse("${race.SecondPractice.date}T${race.SecondPractice.time}")
+                                    .atZoneSameInstant(ZoneId.systemDefault())
+                                    .toLocalDateTime()
+                            val formattedSecondPracticeDateTime =
+                                dateTimeFormatter.format(secondPracticeLocalDateTime)
+                            Text(text = formattedSecondPracticeDateTime.substring(5, 10), fontSize = 14.sp, fontFamily = myCustomFont)
+                        }
 
 
                         race.ThirdPractice?.let {

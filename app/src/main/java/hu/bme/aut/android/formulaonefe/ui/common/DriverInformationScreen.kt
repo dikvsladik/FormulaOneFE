@@ -206,4 +206,3 @@ fun DriverItem(driver: Driver, onItemClick: () -> Unit) {
         }
     }
 }
-

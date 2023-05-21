@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">Formula 1</string>
+    <string name="app_name">Formula 1 FE</string>
     <string name="notification_channel_name">Notification_Channel_Name</string>
     <string name="notification_channel_description">Notification_Channel_Description</string>
     <string name="race_start_notification_channel">Race_Start_Notification_Channel</string>
