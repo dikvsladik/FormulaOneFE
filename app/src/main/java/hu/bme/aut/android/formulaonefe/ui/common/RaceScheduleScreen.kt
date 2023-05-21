@@ -23,6 +23,7 @@ import hu.bme.aut.android.formulaonefe.notification.scheduleRaceStartReminder
 import java.time.OffsetDateTime
 
 import androidx.compose.foundation.pager.VerticalPager
+import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
@@ -40,6 +41,8 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.IntSize
 import androidx.lifecycle.LifecycleCoroutineScope
+import com.google.accompanist.pager.ExperimentalPagerApi
+
 import com.skydoves.landscapist.ImageOptions
 import com.skydoves.landscapist.animation.circular.CircularRevealPlugin
 import com.skydoves.landscapist.components.rememberImageComponent
@@ -48,19 +51,32 @@ import com.skydoves.landscapist.placeholder.placeholder.PlaceholderPlugin
 import com.skydoves.landscapist.placeholder.shimmer.ShimmerPlugin
 import hu.bme.aut.android.formulaonefe.network.ApiClient
 import hu.bme.aut.android.formulaonefe.network.FormulaRepository
+import hu.bme.aut.android.formulaonefe.notification.scheduleNotification
 import hu.bme.aut.android.formulaonefe.ui.tools.YearPickerScreen2005
 import kotlinx.coroutines.launch
+import java.time.LocalDate
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 
-@OptIn(ExperimentalFoundationApi::class)
+@OptIn(ExperimentalFoundationApi::class, ExperimentalPagerApi::class)
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun RaceScheduleScreen(schedule: RaceTable, lifecycleScope: LifecycleCoroutineScope) {
     val showYearPicker = remember { mutableStateOf(false) }
     val repository = FormulaRepository(ApiClient.api)
-    val yearPicked = remember { mutableStateOf(2023) }
+    val yearPicked = remember { mutableStateOf(LocalDate.now().year) }
     val updatedSchedulesLists = remember { mutableStateOf(schedule) }
+    // Calculate the index of the next race based on the current date
+    val nextRaceIndex = if (yearPicked.value == LocalDate.now().year) {
+        updatedSchedulesLists.value.Races.indexOfFirst { race ->
+            LocalDate.parse(race.date, DateTimeFormatter.ISO_LOCAL_DATE).isAfter(LocalDate.now())
+        }.coerceAtLeast(0)
+    } else {
+        0
+    }
+
+    // Set the initial page of the pagerState to the next race index or 0 based on yearPicked
+    val pagerState = rememberPagerState(initialPage = nextRaceIndex)
 
     Box(
         modifier = Modifier.fillMaxSize(),
@@ -71,6 +87,9 @@ fun RaceScheduleScreen(schedule: RaceTable, lifecycleScope: LifecycleCoroutineSc
                 lifecycleScope.launch {
                     val newStandingsLists = repository.getSchedule(selectedYear.toString())!!.MRData.RaceTable
                     yearPicked.value=selectedYear
+                    if (yearPicked.value != LocalDate.now().year){
+                        pagerState.scrollToPage(0)
+                    }
                     updatedSchedulesLists.value = newStandingsLists
                 }
                 showYearPicker.value = false
@@ -79,10 +98,11 @@ fun RaceScheduleScreen(schedule: RaceTable, lifecycleScope: LifecycleCoroutineSc
             VerticalPager(
                 modifier = Modifier.fillMaxSize(),
                 pageCount = updatedSchedulesLists.value.Races.size,
-                contentPadding = PaddingValues(16.dp)
+                contentPadding = PaddingValues(16.dp), state = pagerState
             ) { pageIndex ->
                 val race = updatedSchedulesLists.value.Races[pageIndex]
                 RaceItem(race,yearPicked.value)
+
             }
         }
 
@@ -105,7 +125,7 @@ fun RaceItem(race: Race, yearPicked: Int) {
     val context = LocalContext.current
     val raceDateTime = OffsetDateTime.parse("${race.date}T${race.time}").toLocalDateTime()
     val myCustomFont = FontFamily(Font(R.font.formula1_bold_web_0))
-
+    scheduleNotification(LocalContext.current,race.time,race.date)
     val country= when(race.Circuit.Location.country){
         "UK"->"https://media.formula1.com/content/dam/fom-website/2018-redesign-assets/Track%20icons%204x3/Great%20Britain%20carbon.png.transform/2col-retina/image.png"
         "UAE"->"https://media.formula1.com/content/dam/fom-website/2018-redesign-assets/Track%20icons%204x3/Abu%20Dhabi%20carbon.png.transform/2col-retina/image.png"

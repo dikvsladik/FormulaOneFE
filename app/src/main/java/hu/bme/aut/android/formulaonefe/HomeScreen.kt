@@ -1,6 +1,10 @@
 package hu.bme.aut.android.formulaonefe
 
 import android.annotation.SuppressLint
+import android.app.NotificationChannel
+import android.app.NotificationManager
+import android.content.Context
+import android.os.Build
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -25,6 +29,8 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.core.app.NotificationCompat
+import androidx.core.content.ContextCompat.getSystemService
 import androidx.navigation.NavController
 import com.skydoves.landscapist.ImageOptions
 import com.skydoves.landscapist.animation.circular.CircularRevealPlugin
@@ -50,7 +56,7 @@ fun HomeScreen(navController: NavController) {
             )
         },
         floatingActionButton = {
-            FloatingActionButton(onClick = { /* Navigate to settings */ },backgroundColor = Color(211, 211, 211)) {
+            FloatingActionButton(onClick = { navController.navigate("settings") },backgroundColor = Color(211, 211, 211)) {
                 Icon(Icons.Default.Settings, contentDescription = "Settings")
             }
         },
@@ -146,4 +152,6 @@ fun HomeScreen(navController: NavController) {
             }
         }
     }
+
+
 }

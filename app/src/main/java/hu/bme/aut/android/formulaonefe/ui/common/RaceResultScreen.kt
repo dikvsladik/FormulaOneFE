@@ -1,5 +1,7 @@
 package hu.bme.aut.android.formulaonefe.ui.common
 
+import android.os.Build
+import androidx.annotation.RequiresApi
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.rememberScrollState
@@ -56,17 +58,27 @@ import hu.bme.aut.android.formulaonefe.network.ApiClient
 import hu.bme.aut.android.formulaonefe.network.FormulaRepository
 import hu.bme.aut.android.formulaonefe.ui.tools.YearPickerScreen1950
 import kotlinx.coroutines.launch
+import java.time.LocalDate
 
 val myCustomFont = FontFamily(Font(R.font.formula1_bold_web_0))
 
+@RequiresApi(Build.VERSION_CODES.O)
 @OptIn(ExperimentalPagerApi::class)
 @Composable
 fun RaceResultScreen(initialResultLists: List<Result>,lifecycleScope: LifecycleCoroutineScope) {
-    val pagerState = rememberPagerState()
+
+
     val showYearPicker = remember { mutableStateOf(false) }
     val repository = FormulaRepository(ApiClient.api)
     val resultLists = remember { mutableStateOf(initialResultLists) }
-    val yearPicked = remember { mutableStateOf(2023) }
+    val yearPicked = remember { mutableStateOf(LocalDate.now().year) }
+    val pageToShow = if (yearPicked.value == LocalDate.now().year){
+        resultLists.value.size
+    } else {
+        0
+    }
+
+    val pagerState = rememberPagerState(initialPage = pageToShow)
     Box(
         modifier = Modifier.fillMaxSize(),
         contentAlignment = Alignment.Center

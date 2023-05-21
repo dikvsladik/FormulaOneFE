@@ -1,9 +1,11 @@
 package hu.bme.aut.android.formulaonefe.network
 
+import hu.bme.aut.android.formulaonefe.data.driverinformation.DriverInformation
 import hu.bme.aut.android.formulaonefe.data.raceschedule.RaceSchedule
 import hu.bme.aut.android.formulaonefe.data.result.MRData
 import hu.bme.aut.android.formulaonefe.data.result.RaceTable
 import hu.bme.aut.android.formulaonefe.data.standings.DriverStandings
+import hu.bme.aut.android.formulaonefe.data.worldchampoins.Champions
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 
@@ -51,4 +53,21 @@ class FormulaRepository(private val api: GetFormulaDriverStandingsApi) {
             null
         }
     }
+    suspend fun getDrivers(year: String): DriverInformation? {
+        val response = api.getDrivers(year)
+        return if (response.isSuccessful) {
+            response.body()
+        } else {
+            null
+        }
+    }
+    suspend fun getChampions(): Champions? {
+        val response = api.getChampions()
+        return if (response.isSuccessful) {
+            response.body()
+        } else {
+            null
+        }
+    }
+
 }
